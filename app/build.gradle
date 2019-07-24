@@ -45,4 +45,6 @@ dependencies {
     annotationProcessor "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
 
 
+    implementation 'com.facebook.android:facebook-android-sdk:[4,5)'
+
 }
