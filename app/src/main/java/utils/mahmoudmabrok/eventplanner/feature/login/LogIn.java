@@ -1,10 +1,11 @@
-package utils.mahmoudmabrok.eventplanner;
+package utils.mahmoudmabrok.eventplanner.feature.login;
 
 import androidx.appcompat.app.AppCompatActivity;
+import utils.mahmoudmabrok.eventplanner.R;
 
 import android.os.Bundle;
 
-public class MainActivity extends AppCompatActivity {
+public class LogIn extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
