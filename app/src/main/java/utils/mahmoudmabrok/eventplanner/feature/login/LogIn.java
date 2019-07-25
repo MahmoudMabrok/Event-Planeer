@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -36,7 +37,10 @@ public class LogIn extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setUpLogin();
+
+        checkLoginState();
     }
+
 
     private void setUpLogin() {
         callBackManager = CallbackManager.Factory.create();
@@ -65,6 +69,16 @@ public class LogIn extends AppCompatActivity {
         startActivity(openAcivity);
         finish();
     }
+
+    private void checkLoginState() {
+        AccessToken accessToken = AccessToken.getCurrentAccessToken();
+        boolean isLoged = accessToken != null && !accessToken.isExpired();
+        if (isLoged) {
+            opeDisplayEvents();
+            Log.d(TAG, "checkLoginState: already logged");
+        }
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
