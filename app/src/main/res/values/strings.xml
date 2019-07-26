@@ -1,6 +1,8 @@
 <resources>
-    <string name="app_name">EventPlanner</string>
+    <string name="app_name">Event Reminder</string>
 
     <string name="facebook_app_id">454661701928641</string>
     <string name="fb_login_protocol_scheme">fb454661701928641</string>
+
+
 </resources>

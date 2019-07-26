@@ -16,6 +16,7 @@ import utils.mahmoudmabrok.eventplanner.R;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.Holder> {
 
+
     private List<Event> list;
 
     public EventAdapter() {
@@ -55,6 +56,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.Holder> {
         Event item = list.get(i);
         holder.tvEventName.setText(item.getName());
         holder.tvEventDate.setText(item.getDate());
+        holder.textView4.setText(item.getWeather());
+        holder.tvEventDetailse.setText(item.getDetails());
     }
 
     @Override
@@ -62,12 +65,24 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.Holder> {
         return list.size();
     }
 
+    public void updateWithWeather(double temp, int humidity) {
+        for (Event event : list) {
+            event.setTemperature(temp);
+            event.setHumidity(humidity);
+        }
+        notifyDataSetChanged();
+    }
+
     class Holder extends RecyclerView.ViewHolder {
+
         @BindView(R.id.tvEventName)
         TextView tvEventName;
         @BindView(R.id.tvEventDate)
         TextView tvEventDate;
-
+        @BindView(R.id.tvEventDetailse)
+        TextView tvEventDetailse;
+        @BindView(R.id.textView4)
+        TextView textView4;
 
         public Holder(@NonNull View itemView) {
             super(itemView);

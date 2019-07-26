@@ -36,7 +36,13 @@ import pub.devrel.easypermissions.EasyPermissions;
 import pub.devrel.easypermissions.PermissionRequest;
 import utils.mahmoudmabrok.eventplanner.R;
 
+/**
+ * stop working on it as there are problems with calender api that need release apk
+ * I created mock events at another activity "CalenderLoad"
+ */
+
 public class DisplayEvents extends AppCompatActivity {
+
 
     private static final String TAG = "DisplayEvents";
     private static final int RC_STORAGE = 10;
@@ -108,7 +114,6 @@ public class DisplayEvents extends AppCompatActivity {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 */
-
     public Credential authoize(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
 
         InputStream in = getResources().openRawResource(R.raw.credentials);

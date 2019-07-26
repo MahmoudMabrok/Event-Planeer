@@ -8,6 +8,12 @@ import utils.mahmoudmabrok.eventplanner.dataLayer.remote.model.WeatherResponce;
 
 public interface WeatherService {
 
+    /**
+     * q is parameter for city
+     * units = metric request temperature  in C`
+     *
+     * @return WeatherResponce
+     */
     @GET("weather?q=Cairo&appid=735df74303fd5bec95ae390f0ce0443d&units=metric")
     public Call<WeatherResponce> getWeather();
 }
