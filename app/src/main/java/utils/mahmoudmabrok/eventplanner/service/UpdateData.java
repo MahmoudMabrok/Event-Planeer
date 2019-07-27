@@ -25,6 +25,8 @@ public class UpdateData extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(TAG, "onHandleIntent: ");
+        // TODO: 7/27/2019 should start call api and retrive data then make
+        // it paracable to be sent inside intent to activity
     }
 
     @Override
