@@ -1,10 +1,12 @@
 package utils.mahmoudmabrok.eventplanner.feature.displayEvents;
 
-import android.accounts.AccountManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -17,13 +19,13 @@ import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.Events;
+import com.uk.tastytoasty.TastyToasty;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -35,16 +37,20 @@ import retrofit2.Response;
 import utils.mahmoudmabrok.eventplanner.R;
 import utils.mahmoudmabrok.eventplanner.dataLayer.remote.Remote;
 import utils.mahmoudmabrok.eventplanner.dataLayer.remote.model.WeatherResponce;
+import utils.mahmoudmabrok.eventplanner.service.UpdateData;
 
 public class CalenderLoad extends AppCompatActivity {
+
+    private static final int REQUEST_CODE = 5001;
+    @BindView(R.id.rvEvents)
+    RecyclerView rvEvents;
+
 
     private static final int REQUEST_ACCOUNT_PICKER = 10;
     private static final String PREF_ACCOUNT_NAME = "account ";
     private static final String TAG = "CalenderLoad";
     final HttpTransport transport = AndroidHttp.newCompatibleTransport();
     final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-    @BindView(R.id.rvEvents)
-    RecyclerView rvEvents;
     private GoogleAccountCredential credential;
     private Calendar client;
     private Remote remote;
@@ -52,29 +58,51 @@ public class CalenderLoad extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate: ");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calender_load);
         ButterKnife.bind(this);
-        SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-        Log.d(TAG, "onCreate: ");
+
         credential = GoogleAccountCredential.usingOAuth2(this,
                 Collections.singleton(CalendarScopes.CALENDAR));
+        remote = new Remote();
 
-        if (settings.getString(PREF_ACCOUNT_NAME, null) == null) {
-            chooseAccount();
-            Log.d(TAG, "chooseAccount: ");
-        } else {
-            configureAndLoad();
-            Log.d(TAG, "configureAndLoad: ");
-        }
+        configureAndLoad();
 
         initRV();
         loadData();
-        remote = new Remote();
+
         // call weather api
         loadWeather();
+        scheduleUpdateTask();
     }
 
+    private void scheduleUpdateTask() {
+        // intent for service
+        Intent intent = new Intent(this, UpdateData.class);
+        // intent that will start service
+        PendingIntent pendingIntent = PendingIntent.getService(this,
+                REQUEST_CODE, intent, 0);
+
+        // add 3 seconds after first register.
+        long timeToStart = SystemClock.elapsedRealtime() + 4 * 1000;
+
+        long time = 30 * 1000;
+
+        // Schedule the alarm.
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+       /* am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeToStart,
+                time, pendingIntent);*/
+        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeToStart,
+                time, pendingIntent);
+
+    }
+
+
+    /**
+     * Load data (now is a fake data)
+     */
     private void loadData() {
         List<utils.mahmoudmabrok.eventplanner.feature.displayEvents.Event> eventList = new ArrayList<>();
         eventList.add(new utils.mahmoudmabrok.eventplanner.feature.displayEvents.Event("Android Meetup #1", "22-8-2019"));
@@ -89,6 +117,9 @@ public class CalenderLoad extends AppCompatActivity {
         rvEvents.setAdapter(adapter);
     }
 
+    /**
+     * call api and retrieve weather then update data in recyclerview
+     */
     private void loadWeather() {
         remote.getWeather().enqueue(new Callback<WeatherResponce>() {
             @Override
@@ -113,19 +144,27 @@ public class CalenderLoad extends AppCompatActivity {
         });
     }
 
+    /**
+     * call Calender API and retrieve events.
+     */
     private void configureAndLoad() {
         SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-        credential.setSelectedAccountName(settings.getString(PREF_ACCOUNT_NAME, ""));
+        credential.setSelectedAccountName(settings.getString(PREF_ACCOUNT_NAME, null));
+        Log.d(TAG, "configureAndLoad: name " + settings.getString(PREF_ACCOUNT_NAME, null));
         // Calendar client
         client = new Calendar.Builder(
-                transport, jsonFactory, credential).setApplicationName("Google-CalendarAndroidSample/1.0")
+                transport, jsonFactory, credential)
+                .setApplicationName("Calender")
                 .build();
 
         // List the next 10 events from the primary calendar.
         DateTime now = new DateTime(System.currentTimeMillis());
         try {
+            // create thread to not block UI.
             new Thread(() -> {
                 try {
+                    // "primary" for current user or base calender.
+                    // is snippet from google repo.
                     Events events = client.events().list("primary")
                             .setMaxResults(10)
                             .setTimeMin(now)
@@ -148,46 +187,14 @@ public class CalenderLoad extends AppCompatActivity {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    TastyToasty.violet(this, "There is error with Calender API", null).show();
                 }
             }).start();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
-    /**
-     * Starts an activity in Google Play Services so the user can pick an
-     * account.
-     */
-    private void chooseAccount() {
-        startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_ACCOUNT_PICKER:
-                checkPicler(data, resultCode);
-        }
-    }
-
-    private void checkPicler(Intent data, int resultCode) {
-        if (resultCode == RESULT_OK) {
-            if (data != null) {
-                String accountName = data.getExtras().getString(AccountManager.KEY_ACCOUNT_NAME);
-                if (accountName != null) {
-                    //  credential.setSelectedAccountName(accountName);
-                    SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = settings.edit();
-                    editor.putString(PREF_ACCOUNT_NAME, accountName);
-                    editor.commit();
-
-                    configureAndLoad();
-                    // // TODO: 7/26/2019  load
-                }
-            }
-        }
-    }
 }
