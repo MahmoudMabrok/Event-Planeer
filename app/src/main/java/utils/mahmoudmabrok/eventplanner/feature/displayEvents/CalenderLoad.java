@@ -35,9 +35,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import utils.mahmoudmabrok.eventplanner.R;
+import utils.mahmoudmabrok.eventplanner.dataLayer.local.SharedPref;
 import utils.mahmoudmabrok.eventplanner.dataLayer.remote.Remote;
 import utils.mahmoudmabrok.eventplanner.dataLayer.remote.model.WeatherResponce;
 import utils.mahmoudmabrok.eventplanner.service.UpdateData;
+
+import static utils.mahmoudmabrok.eventplanner.feature.login.LogIn.PREF_ACCOUNT_NAME;
 
 public class CalenderLoad extends AppCompatActivity {
 
@@ -47,7 +50,6 @@ public class CalenderLoad extends AppCompatActivity {
 
 
     private static final int REQUEST_ACCOUNT_PICKER = 10;
-    private static final String PREF_ACCOUNT_NAME = "account ";
     private static final String TAG = "CalenderLoad";
     final HttpTransport transport = AndroidHttp.newCompatibleTransport();
     final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
@@ -55,6 +57,8 @@ public class CalenderLoad extends AppCompatActivity {
     private Calendar client;
     private Remote remote;
     private EventAdapter adapter;
+
+    private String name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +70,9 @@ public class CalenderLoad extends AppCompatActivity {
         credential = GoogleAccountCredential.usingOAuth2(this,
                 Collections.singleton(CalendarScopes.CALENDAR));
         remote = new Remote();
-
+        name = getIntent().getStringExtra(PREF_ACCOUNT_NAME);
+        TastyToasty.violet(this, name, null).show();
+        Log.d(TAG, "onCreate: name " + name);
         configureAndLoad();
 
         initRV();
@@ -148,13 +154,15 @@ public class CalenderLoad extends AppCompatActivity {
      * call Calender API and retrieve events.
      */
     private void configureAndLoad() {
-        SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-        credential.setSelectedAccountName(settings.getString(PREF_ACCOUNT_NAME, null));
-        Log.d(TAG, "configureAndLoad: name " + settings.getString(PREF_ACCOUNT_NAME, null));
+        Log.d(TAG, "configureAndLoad:  name " + name);
+        if (name == null) {
+            return;
+        }
+        credential.setSelectedAccountName(name);
         // Calendar client
         client = new Calendar.Builder(
                 transport, jsonFactory, credential)
-                .setApplicationName("Calender")
+                .setApplicationName("Google Calendar API")
                 .build();
 
         // List the next 10 events from the primary calendar.
@@ -189,7 +197,9 @@ public class CalenderLoad extends AppCompatActivity {
                     e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    TastyToasty.violet(this, "There is error with Calender API", null).show();
+                    runOnUiThread(() -> {
+                        TastyToasty.violet(this, "There is error with Calender API", null).show();
+                    });
                 }
             }).start();
         } catch (Exception e) {

@@ -26,8 +26,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import utils.mahmoudmabrok.eventplanner.R;
+import utils.mahmoudmabrok.eventplanner.dataLayer.local.SharedPref;
 import utils.mahmoudmabrok.eventplanner.feature.displayEvents.CalenderLoad;
-import utils.mahmoudmabrok.eventplanner.feature.displayEvents.DisplayEvents;
 
 public class LogIn extends AppCompatActivity {
 
@@ -57,12 +57,15 @@ public class LogIn extends AppCompatActivity {
                 Collections.singleton(CalendarScopes.CALENDAR));
 
         SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-        if (settings.getString(PREF_ACCOUNT_NAME, null) == null) {
+        String name = settings.getString(PREF_ACCOUNT_NAME, null);
+        Log.d(TAG, "onCreate: after retrieve login " + name);
+        if (name == null) {
             chooseAccount();
             Log.d(TAG, "chooseAccount: ");
         } else {
             // already logged with Google Account
-            opeDisplayEvents();
+            Log.d(TAG, "onCreate: already loged " + name);
+            opeDisplayEvents(name);
         }
     }
 
@@ -134,16 +137,21 @@ public class LogIn extends AppCompatActivity {
             if (data != null) {
                 String accountName = data.getExtras().getString(AccountManager.KEY_ACCOUNT_NAME);
                 if (accountName != null) {
-                    SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = settings.edit();
-                    editor.putString(PREF_ACCOUNT_NAME, accountName);
-                    editor.apply();
-                    opeDisplayEvents();
+                    new SharedPref(getApplicationContext()).setAccountName(accountName);
+                    opeDisplayEvents(accountName);
+                    Log.d(TAG, "checkPicler: name " + accountName);
                 }
             } else {
                 reSelectAccount();
+                Log.d(TAG, "checkPicler: error");
             }
         }
+    }
+
+    private void opeDisplayEvents(String accountName) {
+        Intent openAcivity = new Intent(LogIn.this, CalenderLoad.class);
+        openAcivity.putExtra(PREF_ACCOUNT_NAME, accountName);
+        startActivity(openAcivity);
     }
 
     private void reSelectAccount() {
